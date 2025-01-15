@@ -9,35 +9,35 @@ SLOG="install-$(date +%d-%H%M%S)_themes.log"
 
 # Function to extract files with overwrite option
 extract_files() {
-    local source_dir="$1"      # Source directory containing files
-    local destination="$2"     # Destination directory for extraction
-    local extraction_type="$3" # Type of extraction: "tar" or "unzip"
+  local source_dir="$1"      # Source directory containing files
+  local destination="$2"     # Destination directory for extraction
+  local extraction_type="$3" # Type of extraction: "tar" or "unzip"
 
-    if [ -d "$source_dir" ]; then
-        echo "Extracting files from '$source_dir' directory to '$destination'..."
-        if [ "$extraction_type" == "tar" ]; then
-            for file in "$source_dir"/*.tar.gz; do
-                if [ -f "$file" ]; then
-                    echo "Extracting $file to $destination..."
-                    tar -xzf "$file" -C "$destination" --overwrite && echo "$OK Extracted $file to $destination" || echo "$ERROR Extraction of $file failed"
-                fi
-            done
-        elif [ "$extraction_type" == "unzip" ]; then
-            for file in "$source_dir"/*.zip; do
-                if [ -f "$file" ]; then
-                    echo "Extracting $file to $destination..."
-                    unzip -o -q "$file" -d "$destination" && echo "$OK Extracted $file to $destination" || echo "$ERROR Extraction of $file failed"
-                fi
-            done
-        else
-            echo "${ERROR} Invalid extraction type '$extraction_type'."
-            return 1
+  if [ -d "$source_dir" ]; then
+    echo "Extracting files from '$source_dir' directory to '$destination'..."
+    if [ "$extraction_type" == "tar" ]; then
+      for file in "$source_dir"/*.tar.gz; do
+        if [ -f "$file" ]; then
+          echo "Extracting $file to $destination..."
+          tar -xzf "$file" -C "$destination" --overwrite && echo "$OK Extracted $file to $destination" || echo "$ERROR Extraction of $file failed"
         fi
-        echo "$OK Extraction from '$source_dir' directory completed"
+      done
+    elif [ "$extraction_type" == "unzip" ]; then
+      for file in "$source_dir"/*.zip; do
+        if [ -f "$file" ]; then
+          echo "Extracting $file to $destination..."
+          unzip -o -q "$file" -d "$destination" && echo "$OK Extracted $file to $destination" || echo "$ERROR Extraction of $file failed"
+        fi
+      done
     else
-        echo "${ERROR} Source directory '$source_dir' does not exist."
-        return 1
+      echo "${ERROR} Invalid extraction type '$extraction_type'."
+      return 1
     fi
+    echo "$OK Extraction from '$source_dir' directory completed"
+  else
+    echo "${ERROR} Source directory '$source_dir' does not exist."
+    return 1
+  fi
 }
 
 # Create directories if they don't exist
@@ -49,3 +49,28 @@ extract_files "theme" ~/.themes "tar" 2>&1 | tee -a "$SLOG"
 
 # Extract files from 'icon' directory to ~/.icons using unzip and log output
 extract_files "icon" ~/.icons "unzip" 2>&1 | tee -a "$SLOG"
+
+# fcitx5 theme
+source_dir="./fcitx"
+target_dir="$HOME/.local/share/fcitx5/themes/"
+
+if [ ! -d "$target_dir" ]; then
+  mkdir -p "$target_dir"
+  if [ $? -eq 0 ]; then
+    echo "$target_dir"
+  else
+    echo "${ERROR} 创建fcitx5主题目录失败，退出脚本。"
+    exit 1
+  fi
+else
+  echo "$target_dir"
+fi
+
+for theme in "$source_dir"/*; do
+  if [ -d "$theme" ]; then
+    cp -r "$theme" "$target_dir"
+  elif [ -f "$theme" ]; then
+    cp "$theme" "$target_dir"
+  fi
+done
+echo "$OK copy fcitx5 themes complete!"
