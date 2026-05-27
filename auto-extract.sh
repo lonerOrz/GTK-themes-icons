@@ -1,76 +1,88 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Set colors for output messages
-OK="$(tput setaf 2)[OK]$(tput sgr0)"
-ERROR="$(tput setaf 1)[ERROR]$(tput sgr0)"
+TARGETS=(
+    "theme:$HOME/.themes:archive"
+    "icon:$HOME/.icons:archive"
+    "fcitx:$HOME/.local/share/fcitx5/themes:plain"
+)
 
-# Set the name of the log file to include the current date and time
-SLOG="install-$(date +%d-%H%M%S)_themes.log"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FORCE=false
+SELECTED=()
 
-# Function to extract files with overwrite option
-extract_files() {
-  local source_dir="$1"      # Source directory containing files
-  local destination="$2"     # Destination directory for extraction
-  local extraction_type="$3" # Type of extraction: "tar" or "unzip"
+C=$(tput setaf 6); G=$(tput setaf 2); Y=$(tput setaf 3); X=$(tput sgr0)
 
-  if [ -d "$source_dir" ]; then
-    echo "Extracting files from '$source_dir' directory to '$destination'..."
-    if [ "$extraction_type" == "tar" ]; then
-      for file in "$source_dir"/*.tar.gz; do
-        if [ -f "$file" ]; then
-          echo "Extracting $file to $destination..."
-          tar -xzf "$file" -C "$destination" --overwrite && echo "$OK Extracted $file to $destination" || echo "$ERROR Extraction of $file failed"
-        fi
-      done
-    elif [ "$extraction_type" == "unzip" ]; then
-      for file in "$source_dir"/*.zip; do
-        if [ -f "$file" ]; then
-          echo "Extracting $file to $destination..."
-          unzip -o -q "$file" -d "$destination" && echo "$OK Extracted $file to $destination" || echo "$ERROR Extraction of $file failed"
-        fi
-      done
-    else
-      echo "${ERROR} Invalid extraction type '$extraction_type'."
-      return 1
-    fi
-    echo "$OK Extraction from '$source_dir' directory completed"
-  else
-    echo "${ERROR} Source directory '$source_dir' does not exist."
-    return 1
-  fi
+for arg in "$@"; do
+    case "$arg" in
+        -f|--force) FORCE=true ;;
+        -*) echo "Unknown option: $arg"; exit 1 ;;
+        *)  SELECTED+=("$arg") ;;
+    esac
+done
+
+msg()  { echo "${C}[I]${X} $1"; }
+ok()   { echo "${G}[✓]${X} $1"; }
+warn() { echo "${Y}[!]${X} $1"; }
+
+deploy_archive() {
+    local src="$1" dest="$2"
+    for ext in "tar.gz" "zip"; do
+        for file in "$src"/*."$ext"; do
+            [[ ! -e "$file" ]] && continue
+            local name=$(basename "$file")
+            local dir="${name%."$ext"}"; [[ "$ext" == "tar.gz" ]] && dir="${dir%.tar}"
+            local target="$dest/$dir"
+
+            if [[ -e "$target" || -L "$target" ]]; then
+                $FORCE && rm -rf "$target" || { warn "Skip: $dir (exists)"; continue; }
+            fi
+
+            msg "Extracting: $name"
+            if [[ "$ext" == "tar.gz" ]]; then
+                tar -xzf "$file" -C "$dest"
+            else
+                unzip -o -q "$file" -d "$dest"
+            fi
+            [[ $? -eq 0 ]] && ok "Done: $dir"
+        done
+    done
 }
 
-# Create directories if they don't exist
-mkdir -p ~/.icons
-mkdir -p ~/.themes
+deploy_plain() {
+    local src="$1" dest="$2"
+    for item in "$src"/*; do
+        [[ ! -d "$item" ]] && continue
+        local name=$(basename "$item")
+        local target="$dest/$name"
 
-# Extract files from 'theme' directory to ~/.themes using tar and log output
-extract_files "theme" ~/.themes "tar" 2>&1 | tee -a "$SLOG"
+        if [[ -e "$target" || -L "$target" ]]; then
+            $FORCE && rm -rf "$target" || continue
+        fi
+        cp -r "$item" "$dest/" && ok "Copied: $name"
+    done
+}
 
-# Extract files from 'icon' directory to ~/.icons using unzip and log output
-extract_files "icon" ~/.icons "unzip" 2>&1 | tee -a "$SLOG"
+msg "Starting deployment..."
+$FORCE && warn "Force mode enabled"
 
-# fcitx5 theme
-source_dir="./fcitx"
-target_dir="$HOME/.local/share/fcitx5/themes/"
+for cfg in "${TARGETS[@]}"; do
+    IFS=':' read -r src_sub dest mode <<< "$cfg"
 
-if [ ! -d "$target_dir" ]; then
-  mkdir -p "$target_dir"
-  if [ $? -eq 0 ]; then
-    echo "$target_dir"
-  else
-    echo "${ERROR} 创建fcitx5主题目录失败，退出脚本。"
-    exit 1
-  fi
-else
-  echo "$target_dir"
-fi
+    if [[ ${#SELECTED[@]} -gt 0 ]]; then
+        found=false
+        for s in "${SELECTED[@]}"; do [[ "$s" == "$src_sub" ]] && found=true && break; done
+        $found || continue
+    fi
 
-for theme in "$source_dir"/*; do
-  if [ -d "$theme" ]; then
-    cp -r "$theme" "$target_dir"
-  elif [ -f "$theme" ]; then
-    cp "$theme" "$target_dir"
-  fi
+    src_path="$ROOT/$src_sub"
+    [[ ! -d "$src_path" ]] && continue
+    [[ ! -d "$dest" ]] && mkdir -p "$dest"
+
+    msg "Processing group: $src_sub"
+    case "$mode" in
+        archive) deploy_archive "$src_path" "$dest" ;;
+        plain)   deploy_plain "$src_path" "$dest" ;;
+    esac
 done
-echo "$OK copy fcitx5 themes complete!"
+
+ok "Execution finished"

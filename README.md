@@ -1,47 +1,68 @@
 # GTK-themes-icons
-### GTK Themes and icons for my Hyprland install scripts & dots
 
-### This will be only as hosting for the gtk themes and icons that will be pulled during installation of Hyprland using my Hyprland install scripts
+### 🎨 GTK Themes, Icons, and Fcitx5 Themes
 
-### to auto extract / install:
+This repository is a collection of GTK themes, icons, and Fcitx5 skins. It serves as a hosting and deployment tool, allowing you to quickly set up your desktop environment's appearance.
 
-Dependencies
-`tar` & `unzip`
+---
 
-clone the repo
+## 🛠️ Dependencies
+
+Ensure you have the following tools installed:
+
+- `tar` & `unzip` (for extraction)
+- `tput` (for colored output)
+
+---
+
+## 🚀 Quick Installation
+
+To automatically install all themes and icons to their respective system directories (`~/.themes`, `~/.icons`, and `~/.local/share/fcitx5/themes`):
+
 ```bash
-git clone https://github.com/JaKooLit/GTK-themes-icons.git --depth 1
+git clone --depth 1 https://github.com/lonerOrz/GTK-themes-icons.git
 cd GTK-themes-icons
-chmod +x auto-extract.sh
-./auto-extract.sh
+chmod +x autotract.sh
+./autotract.sh
 ```
 
-Manual (clone)
+---
+
+## 🔧 Applying Themes
+
+### Using GUI (Recommended)
+
+Use [**nwg-look**](https://github.com/nwg-piotr/nwg-look) or `lxappearance` to apply themes and icons easily.
+
+### Using CLI
+
 ```bash
-git clone https://github.com/JaKooLit/GTK-themes-icons.git --depth 1
-cd GTK-themes-icons
+# Set GTK Theme
+gsettings set org.gnome.desktop.interface gtk-theme "Andromeda-dark"
+
+# Set Icon Theme
+gsettings set org.gnome.desktop.interface icon-theme "Flat-Remix-Blue-Dark"
 ```
 
-Unpack
-```bash
-mkdir -p ~/.icons
-mkdir -p ~/.themes
-tar -xzvf "theme/Andromeda-dark.tar.gz" -C ~/.themes
-tar -xzvf "theme/WhiteSur-Lighttar.gz" -C ~/.themes
-unzip -o -q "icon/Flat-Remix-Blue-Dark.zip" -d ~/.icons
-unzip -o -q "icon/Flat-Remix-Blue-Light.zip" -d ~/.icons
-```
+---
 
-you apply the icons and themes using `nwg-look` [`LINK`](https://github.com/nwg-piotr/nwg-look)
+## 🔄 Maintenance (For Developers)
 
-or
-```bash
-gsettings set org.gnome.desktop.interface gtk-theme Andromeda-dark
+This repository includes a `sync-back.sh` script to help you package themes from your local system back into this repository for backup or distribution.
 
-gsettings set org.gnome.desktop.interface icon-theme Flat-Remix-Blue-Dark
-```
+1. Add or modify themes in your system folders.
+2. Run `./sync-back.sh`.
+3. Follow the interactive prompts to compress and update the files in the repo.
+4. Commit and push your changes.
 
+---
 
-## 🤟 CREDIT and Source:
-- Andromeda Dark GTK Theme [`LINK`](https://github.com/EliverLara/Andromeda-gtk)
-- Flat remix Icon Temes [`LINK`](https://github.com/daniruiz/flat-remix)
+## 🤟 Credits and Source
+
+- **Andromeda Dark GTK Theme**: [EliverLara/Andromeda-gtk](https://github.com/EliverLara/Andromeda-gtk)
+- **Flat Remix Icon Themes**: [daniruiz/flat-remix](https://github.com/daniruiz/flat-remix)
+- **WhiteSur GTK Theme**: [vinceliuice/WhiteSur-gtk-theme](https://github.com/vinceliuice/WhiteSur-gtk-theme)
+
+---
+
+_Maintained by [lonerOrz](https://github.com/lonerOrz)_
